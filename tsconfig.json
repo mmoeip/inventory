@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "es2020",
+    "types": ["node", "ethers", "chai", "mocha"],
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@contracts/*": ["./contracts/*"],
+      "@tests/*": ["./test/*"],
+      "@generated/*": ["./generated/*"],
+      "@scripts/*": ["./scripts/*"],
+      "@constants/*": ["./constants/*"],
+      "@helpers/*": ["./helpers/*"]
+    }
+  },
+  "include": ["types", "scripts", "test", "helpers", "./hardhat.config.ts", "constants", "helpers"],
+  "exclude": ["**/node_modules"],
+  "ts-node": {
+    "swc": true,
+    "require": ["tsconfig-paths/register"],
+    "compilerOptions": {
+      "module": "CommonJS"
+    },
+    "moduleTypes": {
+      "**/*": "cjs"
+    }
+  }
+}
