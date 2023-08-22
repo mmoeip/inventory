@@ -12,15 +12,16 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 import { DiamondReentrancyGuard } from "../security/DiamondReentrancyGuard.sol";
 import "../libraries/LibDiamond.sol";
 import "../libraries/LibInventory.sol";
 import "../interfaces/IInventory.sol";
 
-contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReentrancyGuard {
+contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReentrancyGuard, Context {
   modifier onlyAdmin() {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-    require(istore.AdminAddress == msg.sender, "Only Admin address allowed");
+    require(istore.AdminAddress == _msgSender(), "Only Admin address allowed");
     _;
   }
 
@@ -58,7 +59,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     uint256 newSlot = istore.NumSlots;
     istore.SlotData[newSlot] = LibInventory.Slot({ SlotType: slotType, SlotURI: slotURI, SlotIsUnequippable: unequippable, SlotId: newSlot });
 
-    emit SlotCreated(msg.sender, newSlot, unequippable, slotType);
+    emit SlotCreated(_msgSender(), newSlot, unequippable, slotType);
     return newSlot;
   }
 
@@ -67,7 +68,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     require(slotType > 0, "InventoryFacet.setSlotType: Slot type must be greater than 0");
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
     istore.SlotTypes[slotType] = slotTypeName;
-    emit NewSlotTypeAdded(msg.sender, slotType, slotTypeName);
+    emit NewSlotTypeAdded(_msgSender(), slotType, slotTypeName);
   }
 
   function assignSlotType(uint256 slot, uint256 slotType) external onlyAdmin {
@@ -75,7 +76,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
 
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
     istore.SlotData[slot].SlotType = slotType;
-    emit SlotTypeAdded(msg.sender, slot, slotType);
+    emit SlotTypeAdded(_msgSender(), slot, slotType);
   }
 
   function getSlotType(uint256 slotType) external view returns (string memory slotTypeName) {
@@ -102,7 +103,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
       );
     }
 
-    emit BackpackAdded(msg.sender, toSubjectTokenId, slotQty);
+    emit BackpackAdded(_msgSender(), toSubjectTokenId, slotQty);
   }
 
   function numSlots() external view returns (uint256) {
@@ -175,17 +176,17 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
 
     if (existingItem.ItemType == 20) {
       IERC20 erc20Contract = IERC20(existingItem.ItemAddress);
-      bool transferSuccess = erc20Contract.transfer(msg.sender, amount);
+      bool transferSuccess = erc20Contract.transfer(_msgSender(), amount);
       require(transferSuccess, "InventoryFacet._unequip: Error unequipping ERC20 item - transfer was unsuccessful");
     } else if (existingItem.ItemType == 721 && amount > 0) {
       IERC721 erc721Contract = IERC721(existingItem.ItemAddress);
-      erc721Contract.safeTransferFrom(address(this), msg.sender, existingItem.ItemTokenId);
+      erc721Contract.safeTransferFrom(address(this), _msgSender(), existingItem.ItemTokenId);
     } else if (existingItem.ItemType == 1155) {
       IERC1155 erc1155Contract = IERC1155(existingItem.ItemAddress);
-      erc1155Contract.safeTransferFrom(address(this), msg.sender, existingItem.ItemTokenId, amount, "");
+      erc1155Contract.safeTransferFrom(address(this), _msgSender(), existingItem.ItemTokenId, amount, "");
     }
 
-    emit ItemUnequipped(subjectTokenId, slot, existingItem.ItemType, existingItem.ItemAddress, existingItem.ItemTokenId, amount, msg.sender);
+    emit ItemUnequipped(subjectTokenId, slot, existingItem.ItemType, existingItem.ItemAddress, existingItem.ItemTokenId, amount, _msgSender());
 
     existingItem.Amount -= amount;
     if (existingItem.Amount == 0) {
@@ -215,7 +216,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
 
     IERC721 subjectContract = IERC721(istore.ContractERC721Address);
 
-    require(msg.sender == subjectContract.ownerOf(subjectTokenId), "InventoryFacet.equip: Message sender is not owner of subject token");
+    require(_msgSender() == subjectContract.ownerOf(subjectTokenId), "InventoryFacet.equip: Message sender is not owner of subject token");
 
     if (istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][slot].ItemType != 0) {
       _unequip(subjectTokenId, slot, true, 0);
@@ -228,19 +229,19 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
 
     if (itemType == LibInventory.ERC20_ITEM_TYPE) {
       IERC20 erc20Contract = IERC20(itemAddress);
-      bool erc20TransferSuccess = erc20Contract.transferFrom(msg.sender, address(this), amount);
+      bool erc20TransferSuccess = erc20Contract.transferFrom(_msgSender(), address(this), amount);
       require(erc20TransferSuccess, "InventoryFacet.equip: Error equipping ERC20 item - transfer was unsuccessful");
     } else if (itemType == LibInventory.ERC721_ITEM_TYPE) {
       IERC721 erc721Contract = IERC721(itemAddress);
-      require(msg.sender == erc721Contract.ownerOf(itemTokenId), "InventoryFacet.equip: Message sender cannot equip an item that they do not own");
-      erc721Contract.safeTransferFrom(msg.sender, address(this), itemTokenId);
+      require(_msgSender() == erc721Contract.ownerOf(itemTokenId), "InventoryFacet.equip: Message sender cannot equip an item that they do not own");
+      erc721Contract.safeTransferFrom(_msgSender(), address(this), itemTokenId);
     } else if (itemType == LibInventory.ERC1155_ITEM_TYPE) {
       IERC1155 erc1155Contract = IERC1155(itemAddress);
-      require(erc1155Contract.balanceOf(msg.sender, itemTokenId) >= amount, "InventoryFacet.equip: Message sender does not own enough of that item to equip");
-      erc1155Contract.safeTransferFrom(msg.sender, address(this), itemTokenId, amount, "");
+      require(erc1155Contract.balanceOf(_msgSender(), itemTokenId) >= amount, "InventoryFacet.equip: Message sender does not own enough of that item to equip");
+      erc1155Contract.safeTransferFrom(_msgSender(), address(this), itemTokenId, amount, "");
     }
 
-    emit ItemEquipped(subjectTokenId, slot, itemType, itemAddress, itemTokenId, amount, msg.sender);
+    emit ItemEquipped(subjectTokenId, slot, itemType, itemAddress, itemTokenId, amount, _msgSender());
 
     istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][slot] = LibInventory.EquippedItem({
       ItemType: itemType,
