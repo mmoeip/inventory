@@ -53,6 +53,6 @@ jobs:
           git push
 
       - name: Run release script
-        run: ./scripts/release/release.sh ${{ github.event.inputs.version }}
+        run: ./scripts/release/release.sh
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
