@@ -1,11 +1,13 @@
 {
-  "name": "lootledger-inventory",
+  "name": "zlootledger-inventory",
   "version": "0.1.0",
   "description": "LootLedger Inventory",
   "scripts": {
     "localChain": "hardhat node",
     "clean": "hardhat clean",
     "compile": "hardhat compile",
+    "release": "./scripts/release/release.sh",
+    "release:dry": "./scripts/release/release.sh --dry-run",
     "compile:zkSync": "hardhat compile --network zkSyncTestnet --force",
     "accounts": "hardhat accounts",
     "generate": "hardhat generate",
@@ -20,6 +22,11 @@
     "format": "yarn prettier -w ./deploy/**/*.ts ./tasks/**/*.ts ./tests/**/*.ts ./helpers/**/*.ts contracts/**/*.sol ",
     "format:check": "yarn prettier -c ./deploy/**/*.ts ./tasks/**/*.ts ./tests/**/*.ts ./helpers/**/*.ts ./contracts/**/*.sol "
   },
+  "files": [
+    "/contracts/**/*.sol",
+    "/artifacts/contracts/**/*.json",
+    "!/artifacts/contracts/mocks/**/*"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/G7DAO/summon-contracts.git"
@@ -42,6 +49,7 @@
     "@typescript-eslint/eslint-plugin": "^5.53.0",
     "@typescript-eslint/parser": "^5.53.0",
     "chai": "^4.3.7",
+    "conventional-changelog": "^5.0.0",
     "debug": "^4.3.4",
     "eslint": "^8.34.0",
     "eslint-config-airbnb": "^19.0.4",

@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number to bump to'
+        required: true
+
+env:
+  VERSION: ${{ github.event.inputs.version }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: npm install
+      - name: Run Compilation
+        run: npm run compile
+      - name: Generate changelog
+        run: npx conventional-changelog -p eslint -i CHANGELOG.md -s -r 0
+      - name: Create release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          release_name: Release v${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          body: |
+            $(cat CHANGELOG.md)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update version number
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const packageJson = JSON.parse(fs.readFileSync('package.json'));
+            packageJson.version = process.env.VERSION;
+            fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
+            return 'Version number updated.';
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+          git add package.json CHANGELOG.md
+          git commit -m "Bump version to v${{ env.VERSION }}"
+          git push
+
+      - name: Run release script
+        run: ./scripts/release/release.sh ${{ github.event.inputs.version }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
