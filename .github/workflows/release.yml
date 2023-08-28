@@ -9,6 +9,7 @@ on:
 
 env:
   VERSION: ${{ github.event.inputs.version }}
+  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
 jobs:
   release:
