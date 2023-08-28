@@ -11,6 +11,7 @@ artifacts
 
 
 node_modules
+.npmrc
 .env
 coverage
 coverage.json

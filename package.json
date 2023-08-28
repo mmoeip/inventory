@@ -1,5 +1,5 @@
 {
-  "name": "lootledger-inventory",
+  "name": "@lootledger/inventory",
   "version": "0.1.0",
   "description": "LootLedger Inventory",
   "scripts": {
@@ -20,17 +20,22 @@
     "format": "yarn prettier -w ./deploy/**/*.ts ./tasks/**/*.ts ./tests/**/*.ts ./helpers/**/*.ts contracts/**/*.sol ",
     "format:check": "yarn prettier -c ./deploy/**/*.ts ./tasks/**/*.ts ./tests/**/*.ts ./helpers/**/*.ts ./contracts/**/*.sol "
   },
+  "files": [
+    "/contracts/**/*.sol",
+    "/artifacts/contracts/**/*.json",
+    "!/artifacts/contracts/mocks/**/*"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/G7DAO/summon-contracts.git"
+    "url": "git+https://github.com/lootledger/inventory.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/G7DAO/summon-contracts/issues"
+    "url": "https://github.com/lootledger/inventory/issues"
   },
-  "homepage": "https://github.com/G7DAO/summon-contracts#readme",
+  "homepage": "https://github.com/lootledger/inventory#readme",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.1",
     "@swc/core": "^1.3.36",
@@ -42,6 +47,7 @@
     "@typescript-eslint/eslint-plugin": "^5.53.0",
     "@typescript-eslint/parser": "^5.53.0",
     "chai": "^4.3.7",
+    "conventional-changelog-cli": "^4.0.0",
     "debug": "^4.3.4",
     "eslint": "^8.34.0",
     "eslint-config-airbnb": "^19.0.4",
