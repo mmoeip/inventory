@@ -17,7 +17,8 @@
       "@scripts/*": ["./scripts/*"],
       "@constants/*": ["./constants/*"],
       "@helpers/*": ["./helpers/*"]
-    }
+    },
+    "outDir": "./build",
   },
   "include": ["types", "scripts", "test", "helpers", "./hardhat.config.ts", "constants", "helpers"],
   "exclude": ["**/node_modules"],
