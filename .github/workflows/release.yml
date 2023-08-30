@@ -25,4 +25,4 @@ jobs:
       - name: Run Compilation
         run: npm run compile
       - name: Publish to NPM
-        run: npm publish
+        run: npm publish --access public
