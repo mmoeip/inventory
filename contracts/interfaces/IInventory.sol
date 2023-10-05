@@ -1,70 +1,133 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.0;
 
-import "../libraries/LibInventory.sol";
+struct Slot {
+    string SlotURI;
+    bool SlotIsPersistent;
+}
 
+// EquippedItem represents an item equipped in a specific inventory slot for a specific ERC721 token.
+struct EquippedItem {
+    uint256 ItemType;
+    address ItemAddress;
+    uint256 ItemTokenId;
+    uint256 Amount;
+}
+
+// Interface ID: c8a97a5b
+//
+// Calculated by solface: https://github.com/moonstream-to/solface
+//
+// To recalculate from root directory of this repo:
+// $ jq .abi build/contracts/IInventory.json  | solface -name IInventory -annotations | grep "Interface ID:"
+//
+// Note: Change path to build/contracts/IInventory.json depending on where you are relative to the repo root.
 interface IInventory {
-  event AdministratorDesignated(address indexed adminAddress);
+    // This event should be emitted when the subject ERC721 contract address is set (or changes) on the
+    // Inventory contract.
+    event NewSubjectAddress(address indexed contractAddress);
 
-  event ContractAddressDesignated(address indexed contractAddress);
+    event SlotCreated(address indexed creator, uint256 slot);
 
-  event SlotCreated(address indexed creator, uint256 indexed slot, bool unequippable, uint256 indexed slotType);
+    event ItemMarkedAsEquippableInSlot(
+        uint256 indexed slot,
+        uint256 indexed itemType,
+        address indexed itemAddress,
+        uint256 itemPoolId,
+        uint256 maxAmount
+    );
 
-  event NewSlotTypeAdded(address indexed creator, uint256 indexed slotType, string slotTypeName);
+    event NewSlotURI(uint256 indexed slotId);
 
-  event ItemMarkedAsEquippableInSlot(uint256 indexed slot, uint256 indexed itemType, address indexed itemAddress, uint256 itemPoolId, uint256 maxAmount);
+    event NewSlotPersistence(uint256 indexed slotId, bool persistent);
 
-  event BackpackAdded(address indexed creator, uint256 indexed toSubjectTokenId, uint256 indexed slotQuantity);
+    event ItemEquipped(
+        uint256 indexed subjectTokenId,
+        uint256 indexed slot,
+        uint256 itemType,
+        address indexed itemAddress,
+        uint256 itemTokenId,
+        uint256 amount,
+        address equippedBy
+    );
 
-  event NewSlotURI(uint256 indexed slotId);
+    event ItemUnequipped(
+        uint256 indexed subjectTokenId,
+        uint256 indexed slot,
+        uint256 itemType,
+        address indexed itemAddress,
+        uint256 itemTokenId,
+        uint256 amount,
+        address unequippedBy
+    );
 
-  event SlotTypeAdded(address indexed creator, uint256 indexed slotId, uint256 indexed slotType);
+    function subject() external view returns (address);
 
-  event ItemEquipped(
-    uint256 indexed subjectTokenId,
-    uint256 indexed slot,
-    uint256 itemType,
-    address indexed itemAddress,
-    uint256 itemTokenId,
-    uint256 amount,
-    address equippedBy
-  );
+    // Constraint: Admin
+    // Emits: SlotCreated, NewSlotURI, NewSlotPersistence
+    function createSlot(
+        bool persistent,
+        string memory slotURI
+    ) external returns (uint256);
 
-  event ItemUnequipped(
-    uint256 indexed subjectTokenId,
-    uint256 indexed slot,
-    uint256 itemType,
-    address indexed itemAddress,
-    uint256 itemTokenId,
-    uint256 amount,
-    address unequippedBy
-  );
+    function numSlots() external view returns (uint256);
 
-  function init(address adminAddress, address subjectAddress) external;
+    function getSlotById(
+        uint256 slotId
+    ) external view returns (Slot memory slots);
 
-  function adminInfo() external view returns (address);
+    function getSlotURI(uint256 slotId) external view returns (string memory);
 
-  function subject() external view returns (address);
+    function slotIsPersistent(uint256 slotId) external view returns (bool);
 
-  function createSlot(bool unequippable, uint256 slotType, string memory slotURI) external returns (uint256);
+    // Constraint: Admin
+    // Emits: NewSlotURI
+    function setSlotURI(string memory newSlotURI, uint slotId) external;
 
-  function numSlots() external view returns (uint256);
+    // Constraint: Admin
+    // Emits: NewSlotPersistence
+    function setSlotPersistent(uint256 slotId, bool persistent) external;
 
-  function markItemAsEquippableInSlot(uint256 slot, uint256 itemType, address itemAddress, uint256 itemPoolId, uint256 maxAmount) external;
+    // Constraint: Admin
+    // Emits: ItemMarkedAsEquippableInSlot
+    function markItemAsEquippableInSlot(
+        uint256 slot,
+        uint256 itemType,
+        address itemAddress,
+        uint256 itemPoolId,
+        uint256 maxAmount
+    ) external;
 
-  function equip(uint256 subjectTokenId, uint256 slot, uint256 itemType, address itemAddress, uint256 itemTokenId, uint256 amount) external;
+    function maxAmountOfItemInSlot(
+        uint256 slot,
+        uint256 itemType,
+        address itemAddress,
+        uint256 itemPoolId
+    ) external view returns (uint256);
 
-  function getSlotById(uint256 slotId) external view returns (LibInventory.Slot memory slots);
+    // Constraint: Non-reentrant.
+    // Emits: ItemEquipped
+    // Optionally emits: ItemUnequipped (if the current item in that slot is being replaced)
+    function equip(
+        uint256 subjectTokenId,
+        uint256 slot,
+        uint256 itemType,
+        address itemAddress,
+        uint256 itemTokenId,
+        uint256 amount
+    ) external;
 
-  function createSlotType(uint256 slotType, string memory slotTypeName) external;
+    // Constraint: Non-reentrant.
+    // Emits: ItemUnequipped
+    function unequip(
+        uint256 subjectTokenId,
+        uint256 slot,
+        bool unequipAll,
+        uint256 amount
+    ) external;
 
-  function assignSlotType(uint256 slot, uint256 slotType) external;
-
-  function getSlotType(uint256 slotType) external view returns (string memory slotTypeName);
-
-  function setSlotUnequippable(bool unquippable, uint256 slotId) external;
-
-  function getAllEquippedItems(uint256 subjectTokenId) external view returns (LibInventory.EquippedItem[] memory equippedItems);
-
-  function equipBatch(uint256 subjectTokenId, uint256[] memory slots, LibInventory.EquippedItem[] memory items) external;
+    function getEquippedItem(
+        uint256 subjectTokenId,
+        uint256 slot
+    ) external view returns (EquippedItem memory item);
 }
