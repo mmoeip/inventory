@@ -29,6 +29,10 @@ interface IInventory {
 
     event SlotCreated(address indexed creator, uint256 slot);
 
+    event AdministratorDesignated(address indexed adminAddress);
+
+    event ContractAddressDesignated(address indexed contractAddress);
+
     event ItemMarkedAsEquippableInSlot(
         uint256 indexed slot,
         uint256 indexed itemType,
@@ -130,4 +134,8 @@ interface IInventory {
         uint256 subjectTokenId,
         uint256 slot
     ) external view returns (EquippedItem memory item);
+
+    function getAllEquippedItems(
+        uint256 subjectTokenId
+    ) external view returns (EquippedItem[] memory items);
 }

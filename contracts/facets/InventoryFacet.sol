@@ -63,48 +63,52 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     return newSlot;
   }
 
-  function createSlotType(uint256 slotType, string memory slotTypeName) external onlyAdmin {
-    require(bytes(slotTypeName).length > 0, "InventoryFacet.setSlotType: Slot type name must be non-empty");
-    require(slotType > 0, "InventoryFacet.setSlotType: Slot type must be greater than 0");
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-    istore.SlotTypes[slotType] = slotTypeName;
-    emit NewSlotTypeAdded(_msgSender(), slotType, slotTypeName);
-  }
+//  TODO: remove slot type functionality and create an "extension"
+//  function createSlotType(uint256 slotType, string memory slotTypeName) external onlyAdmin {
+//    require(bytes(slotTypeName).length > 0, "InventoryFacet.setSlotType: Slot type name must be non-empty");
+//    require(slotType > 0, "InventoryFacet.setSlotType: Slot type must be greater than 0");
+//    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+//    istore.SlotTypes[slotType] = slotTypeName;
+//    emit NewSlotTypeAdded(_msgSender(), slotType, slotTypeName);
+//  }
 
-  function assignSlotType(uint256 slot, uint256 slotType) external onlyAdmin {
-    require(slotType > 0, "InventoryFacet.addSlotType: SlotType must be greater than 0");
+//  TODO: remove slot type functionality and create an "extension"
+//  function assignSlotType(uint256 slot, uint256 slotType) external onlyAdmin {
+//    require(slotType > 0, "InventoryFacet.addSlotType: SlotType must be greater than 0");
+//
+//    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+//    istore.SlotData[slot].SlotType = slotType;
+//    emit SlotTypeAdded(_msgSender(), slot, slotType);
+//  }
 
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-    istore.SlotData[slot].SlotType = slotType;
-    emit SlotTypeAdded(_msgSender(), slot, slotType);
-  }
+//  TODO: remove slot type functionality and create an "extension"
 
-  function getSlotType(uint256 slotType) external view returns (string memory slotTypeName) {
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-    return istore.SlotTypes[slotType];
-  }
+//  function getSlotType(uint256 slotType) external view returns (string memory slotTypeName) {
+//    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+//    return istore.SlotTypes[slotType];
+//  }
 
-  //    TODO: @ogarciarevett change this to use a external backpack NFT
-  function addBackpackToSubject(uint256 slotQty, uint256 toSubjectTokenId, uint256 slotType, string memory slotURI) external onlyAdmin {
-    require(slotQty > 0, "InventoryFacet.addBackpackToSubject: Slot quantity must be greater than 0");
-
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-
-    uint256 previousSlotNumSubject = istore.SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].length;
-
-    for (uint256 i = 0; i < slotQty; i++) {
-      istore.SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].push(
-        LibInventory.Slot({
-          SlotType: slotType,
-          SlotURI: slotURI,
-          SlotIsUnequippable: false,
-          SlotId: previousSlotNumSubject + i == previousSlotNumSubject ? previousSlotNumSubject + 1 : previousSlotNumSubject + i
-        })
-      );
-    }
-
-    emit BackpackAdded(_msgSender(), toSubjectTokenId, slotQty);
-  }
+  //    TODO: @ogarciarevett change this to use a external backpack NFT extension
+//  function addBackpackToSubject(uint256 slotQty, uint256 toSubjectTokenId, uint256 slotType, string memory slotURI) external onlyAdmin {
+//    require(slotQty > 0, "InventoryFacet.addBackpackToSubject: Slot quantity must be greater than 0");
+//
+//    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+//
+//    uint256 previousSlotNumSubject = istore.SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].length;
+//
+//    for (uint256 i = 0; i < slotQty; i++) {
+//      istore.SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].push(
+//        LibInventory.Slot({
+//          SlotType: slotType,
+//          SlotURI: slotURI,
+//          SlotIsUnequippable: false,
+//          SlotId: previousSlotNumSubject + i == previousSlotNumSubject ? previousSlotNumSubject + 1 : previousSlotNumSubject + i
+//        })
+//      );
+//    }
+//
+//    emit BackpackAdded(_msgSender(), toSubjectTokenId, slotQty);
+//  }
 
   function numSlots() external view returns (uint256) {
     return LibInventory.inventoryStorage().NumSlots;
