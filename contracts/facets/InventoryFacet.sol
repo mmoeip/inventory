@@ -2,7 +2,7 @@
 
 /**
  * Authors: Omar Garcia<ogarciarevett>
- * GitHub: https://github.com/G7DAO/contracts
+ * https://github.com/lootledger/inventory
  */
 
 pragma solidity ^0.8.17;
