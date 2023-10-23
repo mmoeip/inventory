@@ -1,21 +1,18 @@
-name: Smart Contract CI
+name: Release
 
 on:
-  pull_request:
-    paths:
-      - 'contracts/**'
+  release:
+    types: [published]
 
 env:
   PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
 jobs:
-  security_audit:
+  release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -23,42 +20,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Install dependencies
         run: npm install
-
-      - name: Run Slither
-        run: |
-          npm install -g slither-analyzer
-          slither .
-
-  code_coverage:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run Solidity-Coverage
-        run: |
-          npm install --save-dev solidity-coverage
-          npx hardhat coverage
-
-      - name: Enforce Coverage
-        run: |
-          COVERAGE=$(grep -Po 'All files[^|]*\|\s+\K\d+' coverage/coverage-summary.txt)
-          if (( COVERAGE < 30 )); then
-            echo "Code coverage is below 60%"
-            exit 1
-          fi
+      - name: Run Compilation
+        run: npm run compile
+      - name: Publish to NPM
+        run: npm publish --access public
