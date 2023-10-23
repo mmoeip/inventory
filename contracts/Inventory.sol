@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IInventory.sol";
 
 
-contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessControl, ReentrancyGuard  {
+contract Inventory is IInventory, ERC721Holder, ERC1155Holder, ReentrancyGuard, AccessControl  {
 
     uint256 constant ERC20_ITEM_TYPE = 20;
     uint256 constant ERC721_ITEM_TYPE = 721;
@@ -27,25 +27,11 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
 
     bytes32 public constant INVENTORY_ADMIN = keccak256("INVENTORY_ADMIN");
 
-    struct Slot {
-        string SlotURI;
-        bool SlotIsUnequippable;
-        uint256 SlotId;
-    }
-
-    // EquippedItem represents an item equipped in a specific inventory slot for a specific ERC721 token.
-    struct EquippedItem {
-        uint256 ItemType;
-        address ItemAddress;
-        uint256 ItemTokenId;
-        uint256 Amount;
-    }
-
     address public contractERC721Address;
     uint256 public numSlots;
 
     // SlotId => slot, useful to get the rest of the slot data.
-    mapping(uint256 => Slot) private slotData;
+    mapping(uint256 => LibInventory.Slot) private slotData;
 
     // SlotType => "slot type name"
     mapping(uint256 => string) private slotTypes;
@@ -73,13 +59,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
     // subjectTokenId =>
     // slotId =>
     // EquippedItem struct
-    mapping(address => mapping(uint256 => mapping(uint256 => EquippedItem))) private equippedItems;
-    // Subject contract address => subject token ID => Slot[]
-    mapping(address => mapping(uint256 => Slot[])) private subjectSlots;
-    // Subject contract address => subject token ID => slotNum
-    mapping(address => mapping(uint256 => uint256)) private subjectNumSlots;
-    // Subject contract address => subject token ID => slotId => bool
-    mapping(address => mapping(uint256 => mapping(uint256 => bool))) private isSubjectTokenBlackListedForSlot;
+    mapping(address => mapping(uint256 => mapping(uint256 => LibInventory.EquippedItem))) private equippedItems;
 
 
     modifier requireValidItemType(uint256 itemType) {
@@ -100,29 +80,24 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
         return contractERC721Address;
     }
 
-    function createSlot(bool unequippable, string memory slotURI) external onlyRole(INVENTORY_ADMIN) returns (uint256) {
+    function createSlot(bool isPersistent, string memory slotURI) external onlyRole(INVENTORY_ADMIN) returns (uint256) {
         numSlots += 1;
         uint256 newSlot = numSlots;
-        slotData[newSlot] = Slot({ SlotURI: slotURI, SlotIsUnequippable: unequippable, SlotId: newSlot });
-
+        slotData[newSlot] = LibInventory.Slot({ SlotURI: slotURI, SlotIsPersistent: isPersistent, SlotId: newSlot });
         emit SlotCreated(_msgSender(), newSlot);
         return newSlot;
     }
 
-    function getSlotById(uint256 slotId) external view returns (Slot memory slot) {
-        return slotData[slotId];
-    }
-
     function setSlotUri(string memory newSlotURI, uint256 slotId) external onlyRole(INVENTORY_ADMIN) {
-        Slot memory slot = slotData[slotId];
+        LibInventory.Slot memory slot = slotData[slotId];
         slot.SlotURI = newSlotURI;
         slotData[slotId] = slot;
         emit NewSlotURI(slotId);
     }
 
-    function setSlotUnequippable(bool unquippable, uint256 slotId) external onlyRole(INVENTORY_ADMIN) {
-        Slot memory slot = slotData[slotId];
-        slot.slotIsUnequippable = unquippable;
+    function setSlotPersistent(uint256 slotId, bool isPersistent) external onlyRole(INVENTORY_ADMIN) {
+        LibInventory.Slot memory slot = slotData[slotId];
+        slot.SlotIsPersistent = isPersistent;
         slotData[slotId] = slot;
     }
 
@@ -148,7 +123,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
         emit ItemMarkedAsEquippableInSlot(slot, itemType, itemAddress, itemTokenId, maxAmount);
     }
 
-    function _unequip(uint256 subjectTokenId, uint256 slot, bool unequipAll, uint256 amount) internal {
+    function _unequip(uint256 subjectTokenId, uint256 slot, bool unequipAll, uint256 amount) public nonReentrant {
         require(!unequipAll || amount == 0, "Inventory._unequip: Set amount to 0 if you are unequipping all instances of the item in that slot");
 
         require(
@@ -158,7 +133,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
 
         require(slotData[slot].SlotIsUnequippable, "Inventory._unequip: That slot is not unequippable");
 
-        EquippedItem storage existingItem = equippedItems[contractERC721Address][subjectTokenId][slot];
+        LibInventory.EquippedItem storage existingItem = equippedItems[contractERC721Address][subjectTokenId][slot];
 
         if (unequipAll) {
             amount = existingItem.Amount;
@@ -233,7 +208,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
 
         emit ItemEquipped(subjectTokenId, slot, itemType, itemAddress, itemTokenId, amount, _msgSender());
 
-        equippedItems[contractERC721Address][subjectTokenId][slot] = EquippedItem({
+        equippedItems[contractERC721Address][subjectTokenId][slot] = LibInventory.EquippedItem({
             ItemType: itemType,
             ItemAddress: itemAddress,
             ItemTokenId: itemTokenId,
@@ -241,20 +216,20 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
         });
     }
 
-    function getAllEquippedItems(uint256 subjectTokenId) external view returns (EquippedItem[] memory onChainEquippedItems) {
-        EquippedItem[] memory items = new EquippedItem[](numSlots);
+    function getAllEquippedItems(uint256 subjectTokenId) external view returns (LibInventory.EquippedItem[] memory onChainEquippedItems) {
+        LibInventory.EquippedItem[] memory items = new LibInventory.EquippedItem[](numSlots);
 
         uint256 counter = 0;
 
         for (uint256 i = 0; i < numSlots; i++) {
-            EquippedItem memory equippedItemBlock = equippedItems[contractERC721Address][subjectTokenId][i];
+            LibInventory.EquippedItem memory equippedItemBlock = equippedItems[contractERC721Address][subjectTokenId][i];
             if (equippedItemBlock.ItemType != 0 || equippedItemBlock.ItemAddress != address(0) || equippedItemBlock.Amount != 0) {
                 items[counter] = equippedItemBlock;
                 counter++;
             }
         }
 
-        EquippedItem[] memory fixedEquippedItems = new EquippedItem[](counter);
+        LibInventory.EquippedItem[] memory fixedEquippedItems = new LibInventory.EquippedItem[](counter);
 
         for (uint256 i = 0; i < counter; i++) {
             fixedEquippedItems[i] = items[i];
@@ -263,12 +238,37 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, AccessContro
         return fixedEquippedItems;
     }
 
-    function equipBatch(uint256 subjectTokenId, uint256[] memory slots, EquippedItem[] memory items) external {
+    function equipBatch(uint256 subjectTokenId, uint256[] memory slots, LibInventory.EquippedItem[] memory items) external nonReentrant {
         require(items.length > 0, "Inventory.batchEquip: Must equip at least one item");
         require(slots.length == items.length, "Inventory.batchEquip: Must provide a slot for each item");
 
         for (uint256 i = 0; i < items.length; i++) {
             equip(subjectTokenId, slots[i], items[i].ItemType, items[i].ItemAddress, items[i].ItemTokenId, items[i].Amount);
         }
+    }
+
+    function getSlotById(uint256 slotId) external view returns (LibInventory.Slot memory slot) {
+        return slotData[slotId];
+    }
+
+    function getEquippedItem(uint256 subjectTokenId, uint256 slot) external view returns (LibInventory.EquippedItem memory equippedItem) {
+        return equippedItems[contractERC721Address][subjectTokenId][slot];
+    }
+
+    function getSlotURI(uint256 slotId) external view returns (string memory) {
+        return slotData[slotId].SlotURI;
+    }
+
+    function maxAmountOfItemInSlot(
+        uint256 slot,
+        uint256 itemType,
+        address itemAddress,
+        uint256 itemTokenId
+    ) external view returns (uint256) {
+        return slotEligibleItems[slot][itemType][itemAddress][itemTokenId];
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControl, ERC1155Receiver) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }
