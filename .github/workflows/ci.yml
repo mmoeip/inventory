@@ -64,10 +64,9 @@ jobs:
           npm install --save-dev solidity-coverage
           npx hardhat coverage
 
+      - name: List files in coverage directory
+        run: ls -R coverage
+
       - name: Enforce Coverage
-        run: |
-          COVERAGE=$(grep -Po 'All files[^|]*\|\s+\K\d+' coverage/coverage-summary.txt)
-          if (( COVERAGE < 30 )); then
-            echo "Code coverage is below 60%"
-            exit 1
-          fi
+        run: npx istanbul check-coverage --statements 37.5 --branches 17.5 --functions 40 --lines 30
+
