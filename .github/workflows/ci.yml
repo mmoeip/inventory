@@ -64,9 +64,6 @@ jobs:
           npm install --save-dev solidity-coverage
           npx hardhat coverage
 
-      - name: List files in coverage directory
-        run: ls -R coverage
-
       - name: Enforce Coverage
         run: npx istanbul check-coverage --statements 37.5 --branches 17.5 --functions 40 --lines 30
 
