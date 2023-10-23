@@ -71,7 +71,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     return LibInventory.inventoryStorage().SlotData[slotId];
   }
 
-  function setSlotUri(string memory newSlotURI, uint256 slotId) external onlyAdmin {
+  function setSlotURI(string memory newSlotURI, uint256 slotId) external onlyAdmin {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
     LibInventory.Slot memory slot = istore.SlotData[slotId];
@@ -80,7 +80,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     emit NewSlotURI(slotId);
   }
 
-  function setSlotIsPersistent(bool isPersistent, uint256 slotId) external onlyAdmin {
+  function setSlotPersistent( uint256 slotId, bool isPersistent) external onlyAdmin {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
     LibInventory.Slot memory slot = istore.SlotData[slotId];
@@ -249,5 +249,19 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
 
   function getSlotURI(uint256 slotId) external view returns (string memory) {
     return LibInventory.inventoryStorage().SlotData[slotId].SlotURI;
+  }
+
+  function slotIsPersistent(uint256 slotId) external view override returns (bool) {
+    return LibInventory.inventoryStorage().SlotData[slotId].SlotIsPersistent;
+  }
+
+  function maxAmountOfItemInSlot(
+    uint256 slot,
+    uint256 itemType,
+    address itemAddress,
+    uint256 itemTokenId
+  ) external view returns (uint256) {
+    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+    return istore.SlotEligibleItems[slot][itemType][itemAddress][itemTokenId];
   }
 }

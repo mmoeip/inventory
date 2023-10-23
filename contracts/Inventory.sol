@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IInventory.sol";
 
 
-contract Inventory is IInventory, ERC721Holder, ERC1155Holder, ReentrancyGuard, AccessControl  {
+contract Inventory is ERC721Holder, ERC1155Holder, ReentrancyGuard, AccessControl, IInventory {
 
     uint256 constant ERC20_ITEM_TYPE = 20;
     uint256 constant ERC721_ITEM_TYPE = 721;
@@ -88,17 +88,21 @@ contract Inventory is IInventory, ERC721Holder, ERC1155Holder, ReentrancyGuard, 
         return newSlot;
     }
 
-    function setSlotUri(string memory newSlotURI, uint256 slotId) external onlyRole(INVENTORY_ADMIN) {
-        LibInventory.Slot memory slot = slotData[slotId];
+    function setSlotURI(string memory newSlotURI, uint256 slotId) external onlyRole(INVENTORY_ADMIN) {
+        LibInventory.Slot storage slot = slotData[slotId];
         slot.SlotURI = newSlotURI;
         slotData[slotId] = slot;
         emit NewSlotURI(slotId);
     }
 
     function setSlotPersistent(uint256 slotId, bool isPersistent) external onlyRole(INVENTORY_ADMIN) {
-        LibInventory.Slot memory slot = slotData[slotId];
+        LibInventory.Slot storage slot = slotData[slotId];
         slot.SlotIsPersistent = isPersistent;
         slotData[slotId] = slot;
+    }
+
+    function slotIsPersistent(uint256 slotId) external view override returns (bool) {
+        return slotData[slotId].SlotIsPersistent;
     }
 
     function markItemAsEquippableInSlot(
@@ -131,7 +135,7 @@ contract Inventory is IInventory, ERC721Holder, ERC1155Holder, ReentrancyGuard, 
             "Inventory._unequip: Since you are not unequipping all instances of the item in that slot, you must specify how many instances you want to unequip"
         );
 
-        require(slotData[slot].SlotIsUnequippable, "Inventory._unequip: That slot is not unequippable");
+        require(slotData[slot].SlotIsPersistent, "Inventory._unequip: That slot is not persistent");
 
         LibInventory.EquippedItem storage existingItem = equippedItems[contractERC721Address][subjectTokenId][slot];
 
