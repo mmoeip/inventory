@@ -14,8 +14,7 @@ library LibInventory {
 
   struct Slot {
     string SlotURI;
-    uint256 SlotType;
-    bool SlotIsUnequippable;
+    bool SlotIsPersistent;
     uint256 SlotId;
   }
 
@@ -33,8 +32,7 @@ library LibInventory {
     uint256 NumSlots;
     // SlotId => slot, useful to get the rest of the slot data.
     mapping(uint256 => Slot) SlotData;
-    // SlotType => "slot type name"
-    mapping(uint256 => string) SlotTypes;
+
     // Slot => item type => item address => item token ID => maximum equippable
     // For ERC20 and ERC721 tokens, item token ID is assumed to be 0. No data will be stored under positive
     // item token IDs.
@@ -59,12 +57,6 @@ library LibInventory {
     // slotId =>
     // EquippedItem struct
     mapping(address => mapping(uint256 => mapping(uint256 => EquippedItem))) EquippedItems;
-    // Subject contract address => subject token ID => Slot[]
-    mapping(address => mapping(uint256 => Slot[])) SubjectSlots;
-    // Subject contract address => subject token ID => slotNum
-    mapping(address => mapping(uint256 => uint256)) SubjectNumSlots;
-    // Subject contract address => subject token ID => slotId => bool
-    mapping(address => mapping(uint256 => mapping(uint256 => bool))) IsSubjectTokenBlackListedForSlot;
   }
 
   function inventoryStorage() internal pure returns (InventoryStorage storage istore) {

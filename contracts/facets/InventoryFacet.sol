@@ -2,7 +2,7 @@
 
 /**
  * Authors: Omar Garcia<ogarciarevett>
- * GitHub: https://github.com/G7DAO/contracts
+ * https://github.com/lootledger/inventory
  */
 
 pragma solidity ^0.8.17;
@@ -52,58 +52,15 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     return LibInventory.inventoryStorage().ContractERC721Address;
   }
 
-  function createSlot(bool unequippable, uint256 slotType, string memory slotURI) external onlyAdmin returns (uint256) {
+  function createSlot(bool isPersistent, string memory slotURI) external onlyAdmin returns (uint256) {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
     istore.NumSlots += 1;
     uint256 newSlot = istore.NumSlots;
-    istore.SlotData[newSlot] = LibInventory.Slot({ SlotType: slotType, SlotURI: slotURI, SlotIsUnequippable: unequippable, SlotId: newSlot });
+    istore.SlotData[newSlot] = LibInventory.Slot({ SlotURI: slotURI, SlotIsPersistent: isPersistent, SlotId: newSlot });
 
-    emit SlotCreated(_msgSender(), newSlot, unequippable, slotType);
+    emit SlotCreated(_msgSender(), newSlot);
     return newSlot;
-  }
-
-  function createSlotType(uint256 slotType, string memory slotTypeName) external onlyAdmin {
-    require(bytes(slotTypeName).length > 0, "InventoryFacet.setSlotType: Slot type name must be non-empty");
-    require(slotType > 0, "InventoryFacet.setSlotType: Slot type must be greater than 0");
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-    istore.SlotTypes[slotType] = slotTypeName;
-    emit NewSlotTypeAdded(_msgSender(), slotType, slotTypeName);
-  }
-
-  function assignSlotType(uint256 slot, uint256 slotType) external onlyAdmin {
-    require(slotType > 0, "InventoryFacet.addSlotType: SlotType must be greater than 0");
-
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-    istore.SlotData[slot].SlotType = slotType;
-    emit SlotTypeAdded(_msgSender(), slot, slotType);
-  }
-
-  function getSlotType(uint256 slotType) external view returns (string memory slotTypeName) {
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-    return istore.SlotTypes[slotType];
-  }
-
-  //    TODO: @ogarciarevett change this to use a external backpack NFT
-  function addBackpackToSubject(uint256 slotQty, uint256 toSubjectTokenId, uint256 slotType, string memory slotURI) external onlyAdmin {
-    require(slotQty > 0, "InventoryFacet.addBackpackToSubject: Slot quantity must be greater than 0");
-
-    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
-
-    uint256 previousSlotNumSubject = istore.SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].length;
-
-    for (uint256 i = 0; i < slotQty; i++) {
-      istore.SubjectSlots[istore.ContractERC721Address][toSubjectTokenId].push(
-        LibInventory.Slot({
-          SlotType: slotType,
-          SlotURI: slotURI,
-          SlotIsUnequippable: false,
-          SlotId: previousSlotNumSubject + i == previousSlotNumSubject ? previousSlotNumSubject + 1 : previousSlotNumSubject + i
-        })
-      );
-    }
-
-    emit BackpackAdded(_msgSender(), toSubjectTokenId, slotQty);
   }
 
   function numSlots() external view returns (uint256) {
@@ -114,7 +71,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     return LibInventory.inventoryStorage().SlotData[slotId];
   }
 
-  function setSlotUri(string memory newSlotURI, uint256 slotId) external onlyAdmin {
+  function setSlotURI(string memory newSlotURI, uint256 slotId) external onlyAdmin {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
     LibInventory.Slot memory slot = istore.SlotData[slotId];
@@ -123,11 +80,11 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     emit NewSlotURI(slotId);
   }
 
-  function setSlotUnequippable(bool unquippable, uint256 slotId) external onlyAdmin {
+  function setSlotPersistent( uint256 slotId, bool isPersistent) external onlyAdmin {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
     LibInventory.Slot memory slot = istore.SlotData[slotId];
-    slot.SlotIsUnequippable = unquippable;
+    slot.SlotIsPersistent = isPersistent;
     istore.SlotData[slotId] = slot;
   }
 
@@ -164,7 +121,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
 
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
-    require(istore.SlotData[slot].SlotIsUnequippable, "InventoryFacet._unequip: That slot is not unequippable");
+    require(istore.SlotData[slot].SlotIsPersistent, "InventoryFacet._unequip: That slot is not unequippable");
 
     LibInventory.EquippedItem storage existingItem = istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][slot];
 
@@ -276,6 +233,11 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     return fixedEquippedItems;
   }
 
+  function getEquippedItem(uint256 subjectTokenId, uint256 slot) external view returns (LibInventory.EquippedItem memory equippedItem) {
+    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+    return istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][slot];
+  }
+
   function equipBatch(uint256 subjectTokenId, uint256[] memory slots, LibInventory.EquippedItem[] memory items) external {
     require(items.length > 0, "InventoryFacet.batchEquip: Must equip at least one item");
     require(slots.length == items.length, "InventoryFacet.batchEquip: Must provide a slot for each item");
@@ -283,5 +245,23 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     for (uint256 i = 0; i < items.length; i++) {
       equip(subjectTokenId, slots[i], items[i].ItemType, items[i].ItemAddress, items[i].ItemTokenId, items[i].Amount);
     }
+  }
+
+  function getSlotURI(uint256 slotId) external view returns (string memory) {
+    return LibInventory.inventoryStorage().SlotData[slotId].SlotURI;
+  }
+
+  function slotIsPersistent(uint256 slotId) external view override returns (bool) {
+    return LibInventory.inventoryStorage().SlotData[slotId].SlotIsPersistent;
+  }
+
+  function maxAmountOfItemInSlot(
+    uint256 slot,
+    uint256 itemType,
+    address itemAddress,
+    uint256 itemTokenId
+  ) external view returns (uint256) {
+    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+    return istore.SlotEligibleItems[slot][itemType][itemAddress][itemTokenId];
   }
 }
