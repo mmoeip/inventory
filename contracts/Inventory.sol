@@ -33,9 +33,6 @@ contract Inventory is ERC721Holder, ERC1155Holder, ReentrancyGuard, AccessContro
     // SlotId => slot, useful to get the rest of the slot data.
     mapping(uint256 => LibInventory.Slot) private slotData;
 
-    // SlotType => "slot type name"
-    mapping(uint256 => string) private slotTypes;
-
     // Slot => item type => item address => item token ID => maximum equippable
     // For ERC20 and ERC721 tokens, item token ID is assumed to be 0. No data will be stored under positive
     // item token IDs.
