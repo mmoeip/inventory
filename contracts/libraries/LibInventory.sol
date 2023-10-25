@@ -6,7 +6,7 @@ LibInventory defines the storage structure used by the Inventory contract as a f
 proxy.
  */
 library LibInventory {
-  bytes32 constant STORAGE_POSITION = keccak256("summon.eth.storage.Inventory");
+  bytes32 constant STORAGE_POSITION = keccak256("eth.storage.Inventory");
 
   uint256 constant ERC20_ITEM_TYPE = 20;
   uint256 constant ERC721_ITEM_TYPE = 721;
