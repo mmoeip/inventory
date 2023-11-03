@@ -3,10 +3,11 @@ name: Inventory system tests
 on:
   pull_request:
     paths:
-      - 'contracts/*"
-      - 'test/*'
+      - 'contracts/**"
+      - 'test/**'
     branches:
       - main
+
 jobs:
   build:
     runs-on: ubuntu-20.04
