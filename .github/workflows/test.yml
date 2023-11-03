@@ -1,0 +1,22 @@
+name: Inventory system tests
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/*"
+      - 'test/*'
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Test
+        run: forge test
