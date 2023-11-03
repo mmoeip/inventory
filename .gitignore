@@ -28,3 +28,12 @@ artifacts-zk
 cache-zk
 .upgradable
 deploy/zk/airdrop_addresses.csv
+
+# Development config
+.vscode/
+
+# Build files
+build/
+out/
+cache_forge/
+
