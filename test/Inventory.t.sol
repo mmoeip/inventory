@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {Test, console2} from "../lib/forge-std/src/Test.sol";
 import {IInventory} from "../contracts/interfaces/IInventory.sol";
 import {IDiamondCut} from "../contracts/interfaces/IDiamondCut.sol";
+import {IDiamondLoupe} from "../contracts/interfaces/IDiamondLoupe.sol";
 import {Inventory} from "../contracts/Inventory.sol";
 import {Diamond} from "../contracts/Diamond.sol";
 import {DiamondCutFacet} from "../contracts/facets/DiamondCutFacet.sol";
@@ -33,7 +34,7 @@ contract InventoryTests is Test {
     function test_create_slot_persistent() public {
         uint256 intiialNumSlots = inventory.numSlots();
 
-        string memory slotURI = "https://example.com/new_slot_uri.json";
+        string memory slotURI = "https://example.com/new_slot_uri_persistent.json";
 
         vm.prank(owner);
         uint256 slotID = inventory.createSlot(true, slotURI);
@@ -43,15 +44,23 @@ contract InventoryTests is Test {
         assertTrue(inventory.slotIsPersistent(slotID));
         assertEq(inventory.getSlotURI(slotID), slotURI);
     }
+
+    function test_create_slot_impersistent() public {
+        uint256 intiialNumSlots = inventory.numSlots();
+
+        string memory slotURI = "https://example.com/new_slot_uri_impersistent.json";
+
+        vm.prank(owner);
+        uint256 slotID = inventory.createSlot(false, slotURI);
+
+        assertEq(inventory.numSlots(), intiialNumSlots + 1);
+
+        assertFalse(inventory.slotIsPersistent(slotID));
+        assertEq(inventory.getSlotURI(slotID), slotURI);
+    }
 }
 
 contract InventoryDiamondTests is InventoryTests {
-    // IInventory public inventory;
-    // IERC721 public nftCharacters;
-
-    // address owner = address(0x1);
-    // address admin = address(0x2);
-
     DiamondCutFacet public diamondCutFacet;
     address public diamond;
     OwnershipFacet public ownershipFacet;
@@ -119,6 +128,13 @@ contract InventoryDiamondTests is InventoryTests {
     }
 
     function test_deployment() public override {
+        address[] memory facetAddresses = IDiamondLoupe(diamond).facetAddresses();
+        assertEq(facetAddresses.length, 4);
+        assertEq(facetAddresses[0], address(diamondCutFacet));
+        assertEq(facetAddresses[1], address(ownershipFacet));
+        assertEq(facetAddresses[2], address(diamondLoupeFacet));
+        assertEq(facetAddresses[3], address(inventoryFacet));
+
         assertEq(inventory.subject(), address(nftCharacters));
     }
 }
