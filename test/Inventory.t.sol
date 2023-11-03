@@ -32,28 +32,28 @@ contract InventoryTests is Test {
     }
 
     function test_create_slot_persistent() public {
-        uint256 intiialNumSlots = inventory.numSlots();
+        uint256 initialNumSlots = inventory.numSlots();
 
         string memory slotURI = "https://example.com/new_slot_uri_persistent.json";
 
         vm.prank(owner);
         uint256 slotID = inventory.createSlot(true, slotURI);
 
-        assertEq(inventory.numSlots(), intiialNumSlots + 1);
+        assertEq(inventory.numSlots(), initialNumSlots + 1);
 
         assertTrue(inventory.slotIsPersistent(slotID));
         assertEq(inventory.getSlotURI(slotID), slotURI);
     }
 
     function test_create_slot_impersistent() public {
-        uint256 intiialNumSlots = inventory.numSlots();
+        uint256 initialNumSlots = inventory.numSlots();
 
         string memory slotURI = "https://example.com/new_slot_uri_impersistent.json";
 
         vm.prank(owner);
         uint256 slotID = inventory.createSlot(false, slotURI);
 
-        assertEq(inventory.numSlots(), intiialNumSlots + 1);
+        assertEq(inventory.numSlots(), initialNumSlots + 1);
 
         assertFalse(inventory.slotIsPersistent(slotID));
         assertEq(inventory.getSlotURI(slotID), slotURI);
