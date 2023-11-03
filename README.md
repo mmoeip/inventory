@@ -11,9 +11,9 @@ npm install
 5. `npm run deployDiamond:localhost`
 
 To deploy the current diamond to the zkSync testnet network, run the following command:(failing)
-This command will run the script of 
+This command will run the script of
 
- **/deploy/zk/deployDiamond.ts** 
+ **/deploy/zk/deployDiamond.ts**
 ```shell
 npm run deployDiamond:ZkSync
 ```
@@ -35,5 +35,3 @@ npm run deployDiamond:mumbai
 ```
 
 Check the rest of the scripts in the package.json file
-
-

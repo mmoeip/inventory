@@ -1,16 +1,19 @@
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
+import '@nomicfoundation/hardhat-foundry';
 
 import 'tsconfig-paths/register';
 import { ChainId } from './constants';
 
 dotenv.config();
 
-const { PRIVATE_KEY, ETHERSCAN_API_KEY, POLYGONSCAN_API_KEY, DEPLOYER_PRIVATE_KEY, REPORT_GAS, INFURA_API_KEY } = process.env;
+const { PRIVATE_KEY, ETHERSCAN_API_KEY, POLYGONSCAN_API_KEY, REPORT_GAS, INFURA_API_KEY } = process.env;
 
-if (!PRIVATE_KEY) {
-  throw new Error('The private key is required');
+let accounts: string[] = [];
+const privateKey: string | undefined = PRIVATE_KEY;
+if (privateKey) {
+  accounts = [privateKey];
 }
 
 const config: HardhatUserConfig = {
@@ -42,22 +45,22 @@ const config: HardhatUserConfig = {
     },
     mantle: {
       url: `${process.env.MANTLE_PROVIDER_URL}`,
-      accounts: [DEPLOYER_PRIVATE_KEY || PRIVATE_KEY],
+      accounts,
       chainId: ChainId.Mantle,
     },
     polygon: {
       url: `${process.env.POLYGON_PROVIDER_URL}`,
-      accounts: [DEPLOYER_PRIVATE_KEY || PRIVATE_KEY],
+      accounts,
       chainId: ChainId.Polygon,
     },
     polygonMumbai: {
       url: 'https://rpc-mumbai.maticvigil.com',
-      accounts: [PRIVATE_KEY],
+      accounts,
       chainId: ChainId.PolygonMumbai,
     },
     mantleWadsley: {
       url: 'https://rpc.testnet.mantle.xyz/',
-      accounts: [PRIVATE_KEY],
+      accounts,
       chainId: ChainId.MantleWadsley,
     },
   },

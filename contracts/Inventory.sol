@@ -69,7 +69,10 @@ contract Inventory is ERC721Holder, ERC1155Holder, ReentrancyGuard, AccessContro
 
     constructor(address adminAddress, address erc721ContractAddress) {
         _setupRole(DEFAULT_ADMIN_ROLE, adminAddress);
+        _setupRole(INVENTORY_ADMIN, adminAddress);
         emit AdministratorDesignated(adminAddress);
+
+        contractERC721Address = erc721ContractAddress;
         emit ContractAddressDesignated(erc721ContractAddress);
     }
 
