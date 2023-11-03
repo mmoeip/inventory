@@ -2,6 +2,8 @@ name: Inventory system tests
 
 on:
   pull_request:
+    branches:
+      - main
     paths:
       - 'contracts/**'
       - 'test/**'
