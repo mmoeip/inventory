@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
+import '@nomicfoundation/hardhat-foundry';
 
 import 'tsconfig-paths/register';
 import { ChainId } from './constants';
@@ -11,7 +12,7 @@ const { PRIVATE_KEY, ETHERSCAN_API_KEY, POLYGONSCAN_API_KEY, REPORT_GAS, INFURA_
 
 let accounts: string[] = [];
 const privateKey: string | undefined = PRIVATE_KEY;
-if ( privateKey ) {
+if (privateKey) {
   accounts = [privateKey];
 }
 
