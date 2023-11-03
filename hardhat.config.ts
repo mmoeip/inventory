@@ -7,7 +7,7 @@ import { ChainId } from './constants';
 
 dotenv.config();
 
-const { PRIVATE_KEY, ETHERSCAN_API_KEY, POLYGONSCAN_API_KEY, DEPLOYER_PRIVATE_KEY, REPORT_GAS, INFURA_API_KEY } = process.env;
+const { PRIVATE_KEY, ETHERSCAN_API_KEY, POLYGONSCAN_API_KEY, REPORT_GAS, INFURA_API_KEY } = process.env;
 
 let accounts: string[] = [];
 const privateKey: string | undefined = PRIVATE_KEY;
