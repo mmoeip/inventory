@@ -15,6 +15,14 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Install JS/TS dependencies - this also installs smart contract dependencies
+        run: npm install
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
