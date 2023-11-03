@@ -19,8 +19,8 @@ contract InventoryTests is Test {
     IInventory public inventory;
     IERC721 public nftCharacters;
 
-    address owner = address(0x1);
-    address admin = address(0x2);
+    address owner = makeAddr("owner");
+    address admin = makeAddr("admin");
 
     function setUp() public virtual {
         nftCharacters = new MockERC721();
