@@ -35,7 +35,6 @@ const config: HardhatUserConfig = {
     },
   },
   defaultNetwork: 'hardhat',
-
   networks: {
     hardhat: {
       blockGasLimit: 3_00_000_000,
