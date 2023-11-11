@@ -1,78 +1,89 @@
-import { FacetCutAction, getSelectorsFacet } from '@scripts/libraries/selectors';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { log } from '@helpers/logger';
+import { FacetCutAction, getSelectorsFacet } from '@scripts/libraries/selectors';
 import { ethers } from 'hardhat';
-
-import { DiamondCutFacet } from '../../typechain-types';
 
 export async function deployExtraContractsAndFacets({ diamondAddressParam = '', useInventory = true, useCrafting = false, useAvatar = true, useItems = true }) {
   try {
     if (!diamondAddressParam) throw new Error('DIAMOND_ADDRESS not set');
     const diamondAddress = diamondAddressParam || process.env.DIAMOND_ADDRESS;
 
-    let inventoryFacet;
-    let craftingFacet;
-    let avatar;
-    let items;
     const cut = [];
+    let avatarAddress;
+    let itemsAddress;
+    let inventoryAddress;
+    let craftingAddress;
 
     if (useAvatar) {
       // Deploy the Avatar and Items contracts
-      const AvatarFactory = await ethers.getContractFactory('MockERC721');
-      avatar = await AvatarFactory.deploy();
-      await avatar.deployed();
+      const avatar = await ethers.deployContract('MockERC721');
+      await avatar.waitForDeployment();
       await avatar.setApprovalForAll(diamondAddress, true);
-      log('AvatarFacet deployed to:', avatar.address);
+      avatarAddress = await avatar.getAddress();
+      log('AvatarFacet deployed to:', avatarAddress);
     }
 
     if (useItems) {
-      const ItemsFactory = await ethers.getContractFactory('MockERC1155');
-      items = await ItemsFactory.deploy();
-      await items.deployed();
+      const items = await ethers.deployContract('ItemsFactory');
+      if (!items) throw new Error('ItemsFactory not deployed');
+      await items.waitForDeployment();
       await items.setApprovalForAll(diamondAddress, true);
-      log('ItemsFacet deployed to:', items.address);
+      itemsAddress = await items.getAddress();
+      log('ItemsFacet deployed to:', itemsAddress);
     }
 
     if (useInventory) {
-      const InventoryFacetFactory = await ethers.getContractFactory('InventoryFacet');
-      inventoryFacet = await InventoryFacetFactory.deploy();
-      await inventoryFacet.deployed();
+      const inventoryFacet = await ethers.deployContract('InventoryFacet');
+      await inventoryFacet.waitForDeployment();
+      inventoryAddress = await inventoryFacet.getAddress();
       cut.push({
         action: FacetCutAction.Add,
-        facetAddress: inventoryFacet.address,
+        facetAddress: inventoryAddress,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         functionSelectors: getSelectorsFacet(inventoryFacet),
       });
-      log('InventoryFacet deployed to:', inventoryFacet.address);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      log('InventoryFacet deployed to:', await inventoryAddress);
     }
 
     if (useCrafting) {
-      const CraftingFacetFactory = await ethers.getContractFactory('CraftingFacet');
-      craftingFacet = await CraftingFacetFactory.deploy();
-      await craftingFacet.deployed();
+      const craftingFacet = await ethers.deployContract('CraftingFacet');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      await craftingFacet.waitForDeployment();
+      craftingAddress = await craftingFacet.getAddress();
       cut.push({
         action: FacetCutAction.Add,
-        facetAddress: craftingFacet.address,
+        facetAddress: craftingAddress,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         functionSelectors: getSelectorsFacet(craftingFacet),
       });
-      log('CraftingFacet deployed to:', craftingFacet.address);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+      log('CraftingFacet deployed to:', craftingAddress);
     }
 
     // Get the DiamondCut facet instance
-    const diamondCutFacet = (await ethers.getContractAt('DiamondCutFacet', diamondAddress as string)) as DiamondCutFacet;
+    const diamondCutFacet = await ethers.getContractAt('DiamondCutFacet', diamondAddress as string);
 
     log('Diamond Cut:', cut);
 
     if (cut.length) {
+      // Construct the transaction object
+      const transaction = {
+        to: await diamondCutFacet.getAddress(),
+        data: diamondCutFacet.interface.encodeFunctionData('diamondCut', [cut, ethers.ZeroAddress, '0x']),
+      };
+      const result = await ethers.provider.call(transaction);
+
       // Add the facets to the diamond
-      const tx = await diamondCutFacet.diamondCut(cut, ethers.constants.AddressZero, '0x');
-      await tx.wait();
-      log('Facets added to the Diamond');
+
+      log('Facets added to the Diamond', result);
     }
 
     return {
-      inventoryAddress: inventoryFacet?.address,
-      craftingAddress: craftingFacet?.address,
-      avatarAddress: avatar?.address,
-      itemsAddress: items?.address,
+      inventoryAddress,
+      craftingAddress,
+      avatarAddress,
+      itemsAddress,
     };
   } catch (error) {
     console.error(error);
