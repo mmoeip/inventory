@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { FacetCutAction, getSelectors } from '@scripts/libraries/selectors';
 import { log } from '@helpers/logger';
 import { Contract, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
-
 export async function deployDiamond() {
   // Get owner by private key
   const accounts = await ethers.getSigners();
@@ -12,9 +12,9 @@ export async function deployDiamond() {
   // deploy DiamondCutFacet
   const DiamondCutFacetFactory: ContractFactory = await ethers.getContractFactory('DiamondCutFacet');
   log('DiamondCutFacet deploying...');
-  const diamondCutFacet: Contract = await DiamondCutFacetFactory.deploy();
-  await diamondCutFacet.deployed();
-  log('DiamondCutFacet deployed:', diamondCutFacet.address);
+  const diamondCutFacet = await DiamondCutFacetFactory.deploy();
+  await diamondCutFacet.waitForDeployment();
+  log('DiamondCutFacet deployed:', await diamondCutFacet.getAddress());
   // // Verify DiamondCutFacet
   // await verifyContract({
   //   contractAddress: diamondCutFacet.address,
@@ -25,9 +25,9 @@ export async function deployDiamond() {
   log('Diamond deploying...');
 
   const Diamond: ContractFactory = await ethers.getContractFactory('Diamond');
-  const diamond: Contract = await Diamond.deploy(contractOwner.address, diamondCutFacet.address);
-  await diamond.deployed();
-  log('Diamond deployed:', diamond.address);
+  const diamond = await Diamond.deploy(contractOwner.address, await diamondCutFacet.getAddress());
+  await diamond.waitForDeployment();
+  log('Diamond deployed:', await diamond.getAddress());
   // await verifyContract({
   //   contractAddress: diamond.address,
   //   signer: contractOwner,
@@ -39,9 +39,9 @@ export async function deployDiamond() {
   // Read about how the diamondCut function works here: https://eips.ethereum.org/EIPS/eip-2535#addingreplacingremoving-functions
   log('DiamondInit deploying...');
   const DiamondInit: ContractFactory = await ethers.getContractFactory('DiamondInit');
-  const diamondInit: Contract = await DiamondInit.deploy();
-  await diamondInit.deployed();
-  log('DiamondInit deployed:', diamondInit.address);
+  const diamondInit = await DiamondInit.deploy();
+  await diamondInit.waitForDeployment();
+  log('DiamondInit deployed:', diamondInit.getAddress());
   // await verifyContract({
   //   contractAddress: diamondInit.address,
   //   signer: contractOwner,
@@ -54,11 +54,11 @@ export async function deployDiamond() {
   const cut = [];
   for (const FacetName of FacetNames) {
     const Facet: ContractFactory = await ethers.getContractFactory(FacetName);
-    const facet: Contract = await Facet.deploy();
-    await facet.deployed();
-    log(`${FacetName} deployed: ${facet.address}`);
+    const facet = await Facet.deploy();
+    await facet.waitForDeployment();
+    log(`${FacetName} deployed: ${await facet.getAddress()}`);
     cut.push({
-      facetAddress: facet.address,
+      facetAddress: await facet.getAddress(),
       action: FacetCutAction.Add,
       functionSelectors: getSelectors(facet),
     });
@@ -66,17 +66,18 @@ export async function deployDiamond() {
 
   // upgrade diamond with facets
   log('Diamond Cut:', cut);
-  const diamondCut: Contract = await ethers.getContractAt('IDiamondCut', diamond.address);
+  const diamondCut: Contract = await ethers.getContractAt('IDiamondCut', await diamond.getAddress());
   // call to init function
   const functionCall = diamondInit.interface.encodeFunctionData('init');
-  const tx = await diamondCut.diamondCut(cut, diamondInit.address, functionCall);
+  const tx = await diamondCut.diamondCut(cut, await diamondInit.getAddress(), functionCall);
   log('Diamond cut tx: ', tx.hash);
   const receipt = await tx.wait();
   if (!receipt.status) {
     throw Error(`Diamond upgrade failed: ${tx.hash}`);
   }
   log('Completed diamond cut');
-  return diamond.address;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return diamond.getAddress();
 }
 
 // We recommend this pattern to be able to use async/await everywhere

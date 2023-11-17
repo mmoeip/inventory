@@ -1,8 +1,16 @@
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/config';
-import '@nomicfoundation/hardhat-toolbox';
-import '@nomicfoundation/hardhat-foundry';
 
+import '@nomicfoundation/hardhat-foundry';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import '@nomicfoundation/hardhat-ethers';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import 'hardhat-gas-reporter';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import '@nomicfoundation/hardhat-verify';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import '@typechain/hardhat';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import 'tsconfig-paths/register';
 import { ChainId } from './constants';
 

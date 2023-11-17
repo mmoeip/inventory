@@ -1,12 +1,13 @@
+import { formatUnits } from 'ethers';
 import { ethers } from 'hardhat';
-import { formatUnits } from 'ethers/lib/utils';
 
 async function main() {
   const [account] = await ethers.getSigners();
   const address = account.address;
-  const balance = await account.getBalance();
+  const balance = await ethers.provider.getBalance(address);
 
   console.log('Main account address: ', address);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   console.log('Main account formatted ETH: ', formatUnits(balance, 'ether'));
 }
 
