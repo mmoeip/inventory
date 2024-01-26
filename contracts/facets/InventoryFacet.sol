@@ -212,7 +212,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
     IERC721 subjectContract = IERC721(istore.ContractERC721Address);
-    require(msg.sender == subjectContract.ownerOf(subjectTokenId), "InventoryFacet.equip: Message sender is not owner of subject token");
+    require(msg.sender == subjectContract.ownerOf(subjectTokenId), "InventoryFacet.unequip: Message sender is not owner of subject token");
 
     _unequip(subjectTokenId, slot, unequipAll, amount);
   }
