@@ -80,7 +80,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     emit NewSlotURI(slotId);
   }
 
-  function setSlotPersistent( uint256 slotId, bool isPersistent) external onlyAdmin {
+  function setSlotPersistent(uint256 slotId, bool isPersistent) external onlyAdmin {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
     LibInventory.Slot memory slot = istore.SlotData[slotId];
@@ -121,7 +121,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
 
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
 
-    require(istore.SlotData[slot].SlotIsPersistent, "InventoryFacet._unequip: That slot is not unequippable");
+    require(!istore.SlotData[slot].SlotIsPersistent, "InventoryFacet._unequip: That slot is not unequippable");
 
     LibInventory.EquippedItem storage existingItem = istore.EquippedItems[istore.ContractERC721Address][subjectTokenId][slot];
 
@@ -208,6 +208,15 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     });
   }
 
+  function unequip(uint256 subjectTokenId, uint256 slot, bool unequipAll, uint256 amount) public virtual diamondNonReentrant {
+    LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
+
+    IERC721 subjectContract = IERC721(istore.ContractERC721Address);
+    require(msg.sender == subjectContract.ownerOf(subjectTokenId), "InventoryFacet.unequip: Message sender is not owner of subject token");
+
+    _unequip(subjectTokenId, slot, unequipAll, amount);
+  }
+
   function getAllEquippedItems(uint256 subjectTokenId) external view returns (LibInventory.EquippedItem[] memory equippedItems) {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
     uint256 totalSlots = this.numSlots();
@@ -255,12 +264,7 @@ contract InventoryFacet is IInventory, ERC721Holder, ERC1155Holder, DiamondReent
     return LibInventory.inventoryStorage().SlotData[slotId].SlotIsPersistent;
   }
 
-  function maxAmountOfItemInSlot(
-    uint256 slot,
-    uint256 itemType,
-    address itemAddress,
-    uint256 itemTokenId
-  ) external view returns (uint256) {
+  function maxAmountOfItemInSlot(uint256 slot, uint256 itemType, address itemAddress, uint256 itemTokenId) external view returns (uint256) {
     LibInventory.InventoryStorage storage istore = LibInventory.inventoryStorage();
     return istore.SlotEligibleItems[slot][itemType][itemAddress][itemTokenId];
   }
